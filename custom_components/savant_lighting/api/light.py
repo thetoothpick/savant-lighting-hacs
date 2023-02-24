@@ -26,7 +26,8 @@ class SavantSwitch:
         self.__dict__.update(dictionary)
         self.id = int(self.id)
         self.led = int(self.led)
-        self.scene = int(self.scene)
+        if self.scene:
+            self.scene = int(self.scene)
 
 
 @dataclass
