@@ -13,6 +13,7 @@ from homeassistant.components.light import (ATTR_BRIGHTNESS, PLATFORM_SCHEMA,
                                             LightEntity, ATTR_BRIGHTNESS_PCT, ColorMode)
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
@@ -69,15 +70,15 @@ async def async_setup_platform(
 
 
 class SavantLightEntity(LightEntity):
-    """Representation of an Awesome Light."""
+    """Representation of a Savant Light."""
 
     def __init__(self, client: SavantLightingClient, light: SavantLight) -> None:
-        """Initialize an AwesomeLight."""
+        """Initialize a Savant Light."""
         self._client = client
         self._light = light
-        self._name = light.name
-        self._state = None
-        self._brightness = None
+        self._attr_name = light.name
+        self._attr_is_on = None
+        self._attr_brightness = None
 
         self._attr_unique_id = f"savant_light_{light.address}"
 
@@ -87,31 +88,10 @@ class SavantLightEntity(LightEntity):
 
         self._attr_unique_id = light.address
 
-    @property
-    def name(self) -> str:
-        """Return the display name of this light."""
-        return self._name
-
-    @property
-    def brightness(self):
-        """Return the brightness of the light.
-
-        This method is optional. Removing it indicates to Home Assistant
-        that brightness is not supported for this light.
-        """
-        return self._brightness
-
-    @property
-    def is_on(self) -> bool | None:
-        """Return true if light is on."""
-        return self._state
+        self._attr_device_info = DeviceInfo(name=light.name, suggested_area=light.room)
 
     async def async_turn_on(self, **kwargs: Any):
-        """Instruct the light to turn on.
-
-        You can skip the brightness part if your light does not support
-        brightness control.
-        """
+        """Instruct the light to turn on."""
         brightness = int(kwargs.get(ATTR_BRIGHTNESS, 255) / 255 * 100)
         await self._client.send_light_state(self._light.address, brightness)
 
@@ -127,5 +107,5 @@ class SavantLightEntity(LightEntity):
         await self._client.load_light_state(self._light.address)
         while not self._client.is_light_state_loaded(self._light.address):
             await asyncio.sleep(1)
-        self._state = self._client.registry.light_on(self._light.address)
-        self._brightness = int(self._client.registry.light_brightness(self._light.address) / 100 * 255)
+        self._attr_is_on = self._client.registry.light_on(self._light.address)
+        self._attr_brightness = int(self._client.registry.light_brightness(self._light.address) / 100 * 255)
