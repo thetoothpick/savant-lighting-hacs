@@ -40,15 +40,15 @@ class SavantLightingClient:
         self.session = aiohttp.ClientSession()
         self.ws = await self.session.ws_connect('ws://%s:8480/' % self.hostname, protocols=['savant_protocol'],
                                                 headers=headers)
-        await self.ws.send_json(WebSocketMessage([messages.DEVICE_PRESENT], uris.SESSION_DEVICE_PRESENT),
-                                dumps=util.dumps)
+        await self.send_message(uris.SESSION_DEVICE_PRESENT, [messages.DEVICE_PRESENT])
+        await self.send_message(uris.STATE_REGISTER, [messages.STATE_MODULE])
         self.read_message_task = asyncio.create_task(self.read_messages())
         self.client_state.running = True
         _LOGGER.info('started savant lighting client')
 
     async def read_messages(self):
         while self.is_connected():
-            await self.handler.handle_message(WebSocketMessage(**await self.ws.receive_json()))
+            await self.handler.handle_message(WebSocketMessage(**await self.ws.receive_json(loads=util.loads)))
 
     async def load_lights(self):
         self.handler.hooks[uris.LIGHTING_DEVICE_LIST].append(self.load_light_states())
@@ -83,12 +83,14 @@ class SavantLightingClient:
 
     async def stop(self):
         _LOGGER.info('shutting down savant lighting client')
+        await self.send_message(uris.STATE_UNREGISTER, [messages.STATE_MODULE])
         self.read_message_task.cancel('shutting down')
         await self.session.close()
         
     async def send_message(self, uri, msgs):
         _LOGGER.debug('sent: uri: %s, messages: %s', uri, msgs)
         await self.ws.send_json(WebSocketMessage(msgs, uri), dumps=util.dumps)
+
 
 class MessageHandler:
     registry: SavantLightRegistry
@@ -106,18 +108,25 @@ class MessageHandler:
             case uris.STATE_SET:
                 for state in [SavantState(**msg) for msg in ws_message.messages]:
                     self.registry.states[state.state] = state
-            case uris.STATE_SET:
+            case uris.STATE_UPDATE:
                 for state in [SavantState(**msg) for msg in ws_message.messages]:
-                    self.registry.states[state.state] = state
+                    if 'module.' in state.state:
+                        self.registry.states[state.state] = state
+                        addr = state.state.replace('module.', '')
+                        state_uri = uris.STATE_MODULE_GET % addr
+                        await self.call_hooks(state_uri)
 
         if uris.STATE_MODULE_GET_PATTERN.match(ws_message.URI):
             for state in [SavantState(**msg) for msg in ws_message.messages]:
                 self.registry.states[state.state] = state
 
-        if len(self.hooks[ws_message.URI]) > 0:
-            for hook in self.hooks[ws_message.URI]:
+        await self.call_hooks(ws_message.URI)
+
+    async def call_hooks(self, uri):
+        if len(self.hooks[uri]) > 0:
+            for hook in self.hooks[uri]:
                 await hook
-            self.hooks[ws_message.URI].clear()
+            self.hooks[uri].clear()
 
 
 class SavantClientState:

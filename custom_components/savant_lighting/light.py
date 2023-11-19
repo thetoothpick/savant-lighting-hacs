@@ -105,7 +105,11 @@ class SavantLightEntity(LightEntity):
         This is the only method that should fetch new data for Home Assistant.
         """
         await self._client.load_light_state(self._light.address)
-        while not self._client.is_light_state_loaded(self._light.address):
+        for i in range(0, 10):
+            if self._client.is_light_state_loaded(self._light.address):
+                break
             await asyncio.sleep(1)
+        if not self._client.is_light_state_loaded(self._light.address):
+            return
         self._attr_is_on = self._client.registry.light_on(self._light.address)
         self._attr_brightness = int(self._client.registry.light_brightness(self._light.address) / 100 * 255)

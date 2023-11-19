@@ -6,6 +6,8 @@ LIGHTING_DEVICE_GET: str = 'lighting/config/device/get'
 LIGHTING_DEVICE_LIST: str = 'lighting/config/device/list'
 
 STATE_SET: str = 'state/set'
+STATE_REGISTER: str = 'state/register'
+STATE_UNREGISTER: str = 'state/unregister'
 STATE_UPDATE: str = 'state/update'
 STATE_MODULE_GET: str = 'state/module/%s/get'
 STATE_LOAD_GET: str = 'state/load/%s/get'
