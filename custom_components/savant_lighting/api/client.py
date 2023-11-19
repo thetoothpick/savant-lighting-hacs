@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import sys
 from asyncio import Task
 from collections import defaultdict
 from typing import Callable, Coroutine, Any
@@ -12,6 +14,8 @@ from .registry import SavantLightRegistry, SavantState
 from .websocket_message import WebSocketMessage
 
 headers = {'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits'}
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SavantLightingClient:
@@ -32,6 +36,7 @@ class SavantLightingClient:
         asyncio.create_task(self.run())
 
     async def run(self):
+        _LOGGER.info('starting savant lighting client')
         self.session = aiohttp.ClientSession()
         self.ws = await self.session.ws_connect('ws://%s:8480/' % self.hostname, protocols=['savant_protocol'],
                                                 headers=headers)
@@ -39,6 +44,7 @@ class SavantLightingClient:
                                 dumps=util.dumps)
         self.read_message_task = asyncio.create_task(self.read_messages())
         self.client_state.running = True
+        _LOGGER.info('started savant lighting client')
 
     async def read_messages(self):
         while self.is_connected():
@@ -46,7 +52,7 @@ class SavantLightingClient:
 
     async def load_lights(self):
         self.handler.hooks[uris.LIGHTING_DEVICE_LIST].append(self.load_light_states())
-        await self.ws.send_json(WebSocketMessage([{}], uris.LIGHTING_DEVICE_GET), dumps=util.dumps)
+        await self.send_message(uris.LIGHTING_DEVICE_GET, [{}])
 
     async def send_light_state(self, addr: str, brightness: int):
         light = self.registry.lights[addr]
@@ -62,7 +68,7 @@ class SavantLightingClient:
         self.client_state.pending_lights.append(addr)
         state_uri = uris.STATE_MODULE_GET % addr
         self.handler.hooks[state_uri].append(self.light_state_loaded(addr))
-        await self.ws.send_json(WebSocketMessage([{}], state_uri), dumps=util.dumps)
+        await self.send_message(state_uri, [{}])
 
     async def light_state_loaded(self, addr: str):
         self.client_state.pending_lights.remove(addr)
@@ -76,9 +82,13 @@ class SavantLightingClient:
         return self.ws is not None and not self.ws.closed
 
     async def stop(self):
+        _LOGGER.info('shutting down savant lighting client')
         self.read_message_task.cancel('shutting down')
         await self.session.close()
-
+        
+    async def send_message(self, uri, msgs):
+        _LOGGER.debug('sent: uri: %s, messages: %s', uri, msgs)
+        await self.ws.send_json(WebSocketMessage(msgs, uri), dumps=util.dumps)
 
 class MessageHandler:
     registry: SavantLightRegistry
@@ -88,8 +98,7 @@ class MessageHandler:
         self.registry = registry
 
     async def handle_message(self, ws_message: WebSocketMessage):
-        # print(ws_message.URI)
-        # print(ws_message)
+        _LOGGER.debug('received: uri: %s, messages: %s', ws_message.URI, ws_message.messages)
         match ws_message.URI:
             case uris.LIGHTING_DEVICE_LIST:
                 for light in [SavantLight(msg) for msg in ws_message.messages]:
