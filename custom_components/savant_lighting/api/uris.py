@@ -1,6 +1,7 @@
 import re
 
 SESSION_DEVICE_PRESENT: str = 'session/devicePresent'
+SESSION_DEVICE_RECOGNIZED: str = 'session/deviceRecognized'
 
 LIGHTING_DEVICE_GET: str = 'lighting/config/device/get'
 LIGHTING_DEVICE_LIST: str = 'lighting/config/device/list'

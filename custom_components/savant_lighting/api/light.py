@@ -59,7 +59,8 @@ class SavantLight:
     switch: list[SavantSwitch]
     load: list[SavantLoad]
 
-    def __init__(self, dictionary):
+    def __init__(self, registry, dictionary):
+        self.registry = registry
         self.__dict__.update(dictionary)
 
         self.id = int(self.id)
@@ -68,7 +69,12 @@ class SavantLight:
         self.load = [SavantLoad(d) for d in self.load]
 
     def load_state_name(self):
-        return 'load.' + self.address.lstrip('0') + '0000'
+        load_id = self.load[0].id
+        if self.registry is not None and self.registry.host_type == 'Pro':
+            load_address = self.id << 16 | load_id - 1 & 1023
+        else:
+            load_address = self.id << 7 | load_id - 1 & 127
+        return f'load.{load_address:x}'
 
     def module_state_name(self):
         return 'module.' + self.address
