@@ -42,7 +42,6 @@ class SavantLightingClient:
         self.session = aiohttp.ClientSession()
         self.ws = await self.session.ws_connect('ws://%s:8480/' % self.hostname, protocols=['savant_protocol'],
                                                 headers=headers)
-        self.handler.hooks[uris.SESSION_DEVICE_RECOGNIZED].append(self.device_recognized())
         await self.send_message(uris.SESSION_DEVICE_PRESENT, [messages.DEVICE_PRESENT])
         await self.send_message(uris.STATE_REGISTER, [messages.STATE_MODULE])
         self.read_message_task = asyncio.create_task(self.read_messages())
