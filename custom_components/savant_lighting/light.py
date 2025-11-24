@@ -88,7 +88,16 @@ class SavantLightEntity(LightEntity):
 
         self._attr_unique_id = light.address
 
-        self._attr_device_info = DeviceInfo(name=light.name, suggested_area=light.room)
+        # Group entities by room under a single Home Assistant device.
+        # Use a stable identifier per room so all lights in the same room share one device,
+        # and set the suggested area to the room name.
+        room_name = getattr(light, 'room', None) or 'Unknown Room'
+        self._attr_device_info = DeviceInfo(
+            # Include hostname to avoid collisions if multiple Savant hosts are configured
+            identifiers={('savant_lighting', f'room:{room_name}')},
+            name=room_name,
+            suggested_area=getattr(light, 'room', None)
+        )
 
     async def async_turn_on(self, **kwargs: Any):
         """Instruct the light to turn on."""
