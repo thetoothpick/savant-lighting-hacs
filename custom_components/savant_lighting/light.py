@@ -123,8 +123,8 @@ class SavantLightEntity(LightEntity):
             self._attr_color_mode = ColorMode.BRIGHTNESS
             self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         else:
-            self._attr_color_mode = None
-            self._attr_supported_color_modes = set()
+            self._attr_color_mode = ColorMode.ONOFF
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
 
         self._attr_unique_id = light.address
 
