@@ -54,6 +54,7 @@ class SavantLight:
     boardname: str
     uid: str
     address: str
+    intAddress: int
     mode: str
     dimmerIsSwitch: bool
     switch: list[SavantSwitch]
@@ -64,6 +65,7 @@ class SavantLight:
         self.__dict__.update(dictionary)
 
         self.id = int(self.id)
+        self.intAddress = int(self.address, 16)
         self.dimmerIsSwitch = bool(self.dimmerIsSwitch)
         self.switch = [SavantSwitch(d) for d in self.switch]
         self.load = [SavantLoad(d) for d in self.load]
@@ -71,10 +73,10 @@ class SavantLight:
     def load_state_name(self):
         load_id = self.load[0].id
         if self.registry is not None and self.registry.host_type == 'Pro':
-            load_address = self.id << 16 | load_id - 1 & 1023
+            load_address = self.intAddress << 16 | load_id - 1 & 1023
         else:
-            load_address = self.id << 7 | load_id - 1 & 127
-        return f'load.{load_address:x}'
+            load_address = self.intAddress << 7 | load_id - 1 & 15
+        return f'load.{load_address:X}'
 
     def module_state_name(self):
         return 'module.' + self.address
