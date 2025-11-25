@@ -1,11 +1,13 @@
 {
   "domain": "savant_lighting",
   "name": "Savant Lighting",
-  "documentation": "https://github.com/thetoothpick/savant-lighting-hacs/",
-  "issue_tracker": "https://github.com/thetoothpick/savant-lighting-hacs/issues",
+  "codeowners": [
+    "@thetoothpick"
+  ],
   "dependencies": [],
-  "codeowners": ["thetoothpick"],
-  "requirements": [],
+  "documentation": "https://github.com/thetoothpick/savant-lighting-hacs/",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/thetoothpick/savant-lighting-hacs/issues",
+  "requirements": [],
   "version": "0.1.0"
 }

@@ -1,8 +1,4 @@
 {
   "name": "Savant Lighting",
-  "domains": [
-    "light"
-  ],
-  "homeassistant": "2022.7.0",
-  "iot_class": "Local Push"
+  "homeassistant": "2022.7.0"
 }
