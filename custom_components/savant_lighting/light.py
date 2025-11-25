@@ -80,19 +80,20 @@ class SavantLightEntity(LightEntity):
         self._attr_is_on = None
         self._attr_brightness = None
 
-        self._attr_unique_id = f"savant_light_{light.address}"
-
         if self._light.load[0].min != 100:  # supports brightness
             self._attr_color_mode = ColorMode.BRIGHTNESS
             self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        else:
+            self._attr_color_mode = None
+            self._attr_supported_color_modes = set()
 
         self._attr_unique_id = light.address
 
     @property
     def device_info(self) -> DeviceInfo:
-        room_name = getattr(self._light, 'room', None)
+        room_name: str = getattr(self._light, 'room', None)
         return DeviceInfo(
-            identifiers={('savant_lighting', f'room_{room_name}')},
+            identifiers={('savant_lighting', f'room_{room_name.lower().replace(" ", "_")}')},
             name=room_name,
             suggested_area=room_name
         )
