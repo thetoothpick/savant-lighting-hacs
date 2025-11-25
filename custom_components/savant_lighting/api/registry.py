@@ -15,6 +15,7 @@ class SavantState:
 class SavantLightRegistry:
     lights: dict[str, SavantLight] = dict()
     states: dict[str, SavantState] = dict()
+    host_type: str
 
     def light_brightness(self, addr):
         return self.states[self.lights[addr].module_state_name()].light_brightness()

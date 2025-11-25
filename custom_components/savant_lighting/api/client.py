@@ -16,6 +16,8 @@ from .websocket_message import WebSocketMessage
 headers = {'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits'}
 
 _LOGGER = logging.getLogger(__name__)
+# _LOGGER.setLevel(logging.DEBUG)
+# logging.basicConfig(stream=sys.stdout)
 
 
 class SavantLightingClient:
@@ -102,8 +104,10 @@ class MessageHandler:
     async def handle_message(self, ws_message: WebSocketMessage):
         _LOGGER.debug('received: uri: %s, messages: %s', ws_message.URI, ws_message.messages)
         match ws_message.URI:
+            case uris.SESSION_DEVICE_RECOGNIZED:
+                self.registry.host_type = ws_message.messages[0]['lType']
             case uris.LIGHTING_DEVICE_LIST:
-                for light in [SavantLight(msg) for msg in ws_message.messages]:
+                for light in [SavantLight(self.registry, msg) for msg in ws_message.messages]:
                     self.registry.lights[light.address] = light
             case uris.STATE_SET:
                 for state in [SavantState(**msg) for msg in ws_message.messages]:
